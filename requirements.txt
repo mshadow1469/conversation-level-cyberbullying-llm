@@ -1,0 +1,12 @@
+pandas
+numpy
+torch
+transformers
+scikit-learn
+peft
+trl
+datasets
+accelerate
+bitsandbytes
+tqdm
+llama-cpp-python

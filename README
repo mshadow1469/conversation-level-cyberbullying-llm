@@ -1,0 +1,234 @@
+# Conversation-Level Cyberbullying Detection  Code Archive
+
+Manraj Boparai May 2026  
+COM3001 Professional Project
+
+## Environment
+
+- Python 3.12.3
+- CUDA 13.0
+- NVIDIA RTX 4000 Ada, 20 GB VRAM
+- University of Surrey Otter lab machines: `otter133`–`otter162`
+- Linux
+
+## Installation
+Create and activate a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+```
+For the Gemma 3-27B GGUF backend, additionally install `llama-cpp-python` :
+
+```bash
+pip install llama-cpp-python
+```
+
+## Cache directory and model paths
+
+Several scripts reference the following Otter lab machine paths:
+
+```text
+/scratch/mb02997/hf
+/scratch/mb02997/models/gemma-3-27b-it.IQ4_XS.gguf
+```
+These were the working paths used during the project.
+
+To run the code on a different machine, update the cache/model paths in:
+
+```text
+src/finetuning/lora/llama_lora.py
+src/finetuning/lorma/llama_lorma_plus_akaiming_b0.py
+src/finetuning/lorma/llama_lorma_plus_a0_bkaiming.py
+src/framework/config.py
+```
+
+The Gemma 3-27B IQ4_XS GGUF file is approximately 14 GB and is not included in this archive.
+
+Download location:
+
+```text
+https://huggingface.co/mradermacher/gemma-3-27b-it-GGUF
+```
+
+Required file:
+
+```text
+gemma-3-27b-it.IQ4_XS.gguf
+```
+
+## Dataset
+
+The pre-split CSV files are stored in:
+
+```text
+data_processed/
+```
+
+This directory contains:
+
+```text
+train.csv
+val.csv
+test.csv
+```
+
+The dataset is derived from splits:
+
+```text
+surrey-nlp/Cyberbullying-Detection-CB2
+```
+
+## Running prompting experiments
+
+Example commands:
+
+```bash
+python run_experiment.py --model llama --strategy zero_shot
+python run_experiment.py --model gemma --strategy zero_shot_meta
+python run_experiment.py --model all --strategy zero_shot
+python run_experiment.py --model llama --strategy all
+```
+
+Available models:
+
+```text
+llama
+gemma
+qwen
+mistral
+```
+Available prompting strategies:
+
+```text
+zero_shot
+few_shot
+zero_shot_peer
+few_shot_peer
+zero_shot_intent
+zero_shot_aggressive
+zero_shot_meta
+few_shot_meta
+```
+
+Results are saved to:
+
+```text
+outputs/results/
+```
+
+This directory is created automatically on the first run.
+
+## Running the classical baseline
+
+Run the TF-IDF + logistic regression baseline with:
+
+```bash
+python -m baselines.tfidf_lr
+```
+
+## Running fine-tuning
+
+Run the LoRA baseline:
+
+```bash
+python -m src.finetuning.lora.llama_lora
+```
+
+Run the LoRMA+ paper-initialisation variant:
+
+```bash
+python -m src.finetuning.lorma.llama_lorma_plus_akaiming_b0
+```
+
+Run the LoRMA+ reference-code initialisation variant:
+
+```bash
+python -m src.finetuning.lorma.llama_lorma_plus_a0_bkaiming
+```
+
+Each fine-tuning run takes approximately 3–6 hours on a single 20 GB GPU.
+
+Trained adapters are saved to:
+
+```text
+outputs/<run_name>/
+```
+
+## File map
+
+```text
+src/framework/
+    config.py
+        Model registry, paths, and strategy names.
+
+    data.py
+        CSV loading, conversation parsing, and metadata extraction.
+
+    prompts.py
+        Base prompt, message construction, and strategy dispatch.
+
+    few_shot_examples.py
+        The four few-shot demonstrations.
+
+    models.py
+        Hugging Face Transformers and llama.cpp inference backends.
+
+    evaluate.py
+        Macro F1, per-class precision/recall/F1, and confusion matrix calculation.
+
+src/finetuning/
+    lora/
+        llama_lora.py
+            LoRA fine-tuning baseline.
+
+    lorma/
+        llama_lorma_plus_akaiming_b0.py
+            LoRMA+ paper-initialisation variant.
+
+        llama_lorma_plus_a0_bkaiming.py
+            LoRMA+ reference-implementation initialisation variant.
+
+baselines/
+    tfidf_lr.py
+        TF-IDF + logistic regression baseline.
+
+legacy/
+    llama_zero_shot.py
+    llama_few_shot.py
+    llama_few_shot_meta.py
+        Three legacy per-script implementations retained as evidence of the
+        framework refactor discussed in Section 3.2 of the report.
+
+run_experiment.py
+    Unified prompting runner.
+
+data_processed/
+    Pre-split CSV files.
+
+results_summary.txt
+    Aggregated results table mirroring Appendix A.4.
+```
+
+## Full results
+
+`FYP.txt` contains the full per-configuration results used for the report tables.
+
+It includes:
+
+```text
+macro F1
+accuracy
+class-wise precision
+class-wise recall
+class-wise F1
+confusion matrix values
+```
+
+These results support Tables 4.1, 4.2, 4.3, and A.4 of the report.
+
+## Notes
+
+The prompting experiments are run through the unified `run_experiment.py` framework.
+
+The fine-tuning experiments and classical baseline are run through separate scripts, but they use the same evaluation approach for reporting metrics and confusion matrices.
